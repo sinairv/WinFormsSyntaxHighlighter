@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Windows.Forms;
 
 namespace WinFormsSyntaxHighlighter
@@ -18,6 +19,7 @@ namespace WinFormsSyntaxHighlighter
         /// </summary>
         private bool _isDuringHighlight;
 
+        private readonly List<KeyValuePair<PatternDefinition, SyntaxStyle>> _patternStylePairs = new List<KeyValuePair<PatternDefinition, SyntaxStyle>>(); 
 
         public SyntaxHighlighter(RichTextBox richTextBox)
         {
@@ -27,6 +29,8 @@ namespace WinFormsSyntaxHighlighter
             _richTextBox = richTextBox;
 
             DisableHighlighting = false;
+            ReplaceTabsWithSpaces = true;
+            TabSize = 4;
 
             _richTextBox.TextChanged += RichTextBox_TextChanged;
         }
@@ -38,6 +42,26 @@ namespace WinFormsSyntaxHighlighter
         /// modified to match the syntax of the currently selected language.
         /// </summary>
         public bool DisableHighlighting { get; set; }
+
+        /// <summary>
+        /// Number of spaces to put instead of tabs. Used only if <c>ReplaceTabsWithSpaces</c> is <c>true</c>.
+        /// </summary>
+        public int TabSize { get; set; }
+
+        /// <summary>
+        /// When set to <c>true</c> replaces tab characters with a number of spaces specified by <c>TabSize</c>.
+        /// </summary>
+        public bool ReplaceTabsWithSpaces { get; set; }
+
+        public void AddPattern(PatternDefinition patternDefinition, SyntaxStyle syntaxStyle)
+        {
+            if (patternDefinition == null)
+                throw new ArgumentNullException("patternDefinition");
+            if (syntaxStyle == null)
+                throw new ArgumentNullException("syntaxStyle");
+
+            _patternStylePairs.Add(new KeyValuePair<PatternDefinition, SyntaxStyle>(patternDefinition, syntaxStyle));
+        }
 
         /// <summary>
         /// Rehighlights the text-box content.

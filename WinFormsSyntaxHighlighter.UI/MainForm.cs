@@ -1,4 +1,5 @@
-﻿using System.Windows.Forms;
+﻿using System.Drawing;
+using System.Windows.Forms;
 
 namespace WinFormsSyntaxHighlighter.UI
 {
@@ -8,6 +9,8 @@ namespace WinFormsSyntaxHighlighter.UI
         {
             InitializeComponent();
             var syntaxHighlighter = new SyntaxHighlighter(rtbInput);
+
+            syntaxHighlighter.AddPattern(new PatternDefinition(new[] {"for", "foreach", "int"}), new SyntaxStyle(Color.Blue));
         }
     }
 }
