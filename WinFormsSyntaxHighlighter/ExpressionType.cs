@@ -5,6 +5,7 @@
     /// </summary>
     public enum ExpressionType
     {
+        None = 0,
         Identifier, // i.e. a word which is neither keyword nor inside any word-group
         Operator,
         Number,

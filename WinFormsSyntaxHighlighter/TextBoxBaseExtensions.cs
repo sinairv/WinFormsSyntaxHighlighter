@@ -22,7 +22,6 @@ namespace WinFormsSyntaxHighlighter
             int hscroll = GetHScrollPos(textBox);
             int vscroll = GetVScrollPos(textBox);
 
-            string text = textBox.Text;
             int selstart = textBox.SelectionStart;
 
             action();

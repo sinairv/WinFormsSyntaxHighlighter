@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 namespace WinFormsSyntaxHighlighter
@@ -21,6 +22,8 @@ namespace WinFormsSyntaxHighlighter
         /// user is typing fast.
         /// </summary>
         private bool _isDuringHighlight;
+
+        private List<StyleGroupPair> _styleGroupPairs;
 
         private readonly List<PatternStyleMap> _patternStyles = new List<PatternStyleMap>(); 
 
@@ -94,13 +97,74 @@ namespace WinFormsSyntaxHighlighter
         // TODO: make abstact
         internal IEnumerable<Expression> Parse(string text)
         {
-            return new[] { new Expression(text, ExpressionType.String, String.Empty)};
+            var parsedExpressions = new List<Expression> { new Expression(text, ExpressionType.None, String.Empty) };
+
+            foreach (var patternStyleMap in _patternStyles)
+            {
+                parsedExpressions = ParsePattern(patternStyleMap, parsedExpressions);
+            }
+
+            return parsedExpressions;
+        }
+
+        // TODO: move to relevant child class
+        private List<Expression> ParsePattern(PatternStyleMap patternStyleMap, List<Expression> expressions)
+        {
+            var parsedExpressions = new List<Expression>();
+
+            foreach (var inputExpression in expressions)
+            {
+                if (inputExpression.Type != ExpressionType.None)
+                {
+                    parsedExpressions.Add(inputExpression);
+                }
+                else
+                {
+                    var regex = patternStyleMap.PatternDefinition.Regex;
+
+                    int lastProcessedIndex = -1;
+
+                    foreach (var match in regex.Matches(inputExpression.Content).Cast<Match>().OrderBy(m => m.Index))
+                    {
+                        if (match.Success)
+                        {
+                            if (match.Index > lastProcessedIndex + 1)
+                            {
+                                string nonMatchedContent = inputExpression.Content.Substring(lastProcessedIndex + 1, match.Index - lastProcessedIndex - 1);
+                                var nonMatchedExpression = new Expression(nonMatchedContent, ExpressionType.None, String.Empty);
+                                parsedExpressions.Add(nonMatchedExpression);
+                                lastProcessedIndex = match.Index + match.Length - 1;
+                            }
+
+                            string matchedContent = inputExpression.Content.Substring(match.Index, match.Length);
+                            var matchedExpression = new Expression(matchedContent, ExpressionType.String, patternStyleMap.Name);
+                            parsedExpressions.Add(matchedExpression);
+                            lastProcessedIndex = match.Index + match.Length - 1;
+                        }
+                    }
+
+                    if (lastProcessedIndex < inputExpression.Content.Length - 1)
+                    {
+                        string nonMatchedContent = inputExpression.Content.Substring(lastProcessedIndex + 1, inputExpression.Content.Length - lastProcessedIndex - 1);
+                        var nonMatchedExpression = new Expression(nonMatchedContent, ExpressionType.None, String.Empty);
+                        parsedExpressions.Add(nonMatchedExpression);
+                    }
+                }
+            }
+
+            return parsedExpressions;
         }
 
         // TODO: make abstract
         internal IEnumerable<StyleGroupPair> GetStyles()
         {
-            return new[] { new StyleGroupPair(new SyntaxStyle(_richTextBox.ForeColor), String.Empty)};
+            yield return new StyleGroupPair(new SyntaxStyle(_richTextBox.ForeColor), String.Empty);
+
+            foreach (var patternStyle in _patternStyles)
+            {
+                var style = patternStyle.SyntaxStyle;
+                yield return new StyleGroupPair(new SyntaxStyle(style.Color, style.Bold, style.Italic), patternStyle.Name);
+            }
         }
 
         // TODO: make virtual
@@ -108,8 +172,6 @@ namespace WinFormsSyntaxHighlighter
         {
             return expression.Group;
         }
-
-        private List<StyleGroupPair> _styleGroupPairs;
 
         private List<StyleGroupPair> GetStyleGroupPairs()
         {
@@ -183,8 +245,7 @@ namespace WinFormsSyntaxHighlighter
                         }
                         else
                         {
-                            sb.AppendFormat(@"\cf{0} {1}\cf0 ", 1,
-                                content);
+                            sb.AppendFormat(@"\cf{0} {1}\cf0 ", 1, content);
                         }
                     }
                 }

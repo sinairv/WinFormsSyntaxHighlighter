@@ -6,7 +6,7 @@ namespace WinFormsSyntaxHighlighter
 {
     public class PatternDefinition
     {
-        private Regex _regex;
+        private readonly Regex _regex;
 
         public PatternDefinition(Regex regularExpression)
         {
@@ -46,6 +46,11 @@ namespace WinFormsSyntaxHighlighter
 
             string pattern = String.Join("|", regexTokens);
             _regex = new Regex(pattern, RegexOptions.Compiled);
+        }
+
+        internal Regex Regex
+        {
+            get { return _regex; }
         }
     }
 }
