@@ -28,12 +28,36 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
+            this.rtbInput = new System.Windows.Forms.RichTextBox();
+            this.SuspendLayout();
+            // 
+            // rtbInput
+            // 
+            this.rtbInput.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.rtbInput.Location = new System.Drawing.Point(13, 13);
+            this.rtbInput.Name = "rtbInput";
+            this.rtbInput.Size = new System.Drawing.Size(784, 347);
+            this.rtbInput.TabIndex = 0;
+            this.rtbInput.Text = "";
+            // 
+            // MainForm
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Text = "Form1";
+            this.ClientSize = new System.Drawing.Size(809, 372);
+            this.Controls.Add(this.rtbInput);
+            this.Name = "MainForm";
+            this.Text = "WinFormsSyntaxHighlighter: a syntax highlighter for Windows Forms RichTextBox Con" +
+    "trol";
+            this.ResumeLayout(false);
+
         }
 
         #endregion
+
+        private System.Windows.Forms.RichTextBox rtbInput;
     }
 }
 
