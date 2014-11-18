@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Text;
 using System.Windows.Forms;
 
 namespace WinFormsSyntaxHighlighter
@@ -19,7 +22,7 @@ namespace WinFormsSyntaxHighlighter
         /// </summary>
         private bool _isDuringHighlight;
 
-        private readonly List<KeyValuePair<PatternDefinition, SyntaxStyle>> _patternStylePairs = new List<KeyValuePair<PatternDefinition, SyntaxStyle>>(); 
+        private readonly List<PatternStyleMap> _patternStyles = new List<PatternStyleMap>(); 
 
         public SyntaxHighlighter(RichTextBox richTextBox)
         {
@@ -29,8 +32,6 @@ namespace WinFormsSyntaxHighlighter
             _richTextBox = richTextBox;
 
             DisableHighlighting = false;
-            ReplaceTabsWithSpaces = true;
-            TabSize = 4;
 
             _richTextBox.TextChanged += RichTextBox_TextChanged;
         }
@@ -43,24 +44,32 @@ namespace WinFormsSyntaxHighlighter
         /// </summary>
         public bool DisableHighlighting { get; set; }
 
-        /// <summary>
-        /// Number of spaces to put instead of tabs. Used only if <c>ReplaceTabsWithSpaces</c> is <c>true</c>.
-        /// </summary>
-        public int TabSize { get; set; }
-
-        /// <summary>
-        /// When set to <c>true</c> replaces tab characters with a number of spaces specified by <c>TabSize</c>.
-        /// </summary>
-        public bool ReplaceTabsWithSpaces { get; set; }
-
         public void AddPattern(PatternDefinition patternDefinition, SyntaxStyle syntaxStyle)
+        {
+            AddPattern((_patternStyles.Count + 1).ToString(CultureInfo.InvariantCulture), patternDefinition, syntaxStyle);
+        }
+
+        public void AddPattern(string name, PatternDefinition patternDefinition, SyntaxStyle syntaxStyle)
         {
             if (patternDefinition == null)
                 throw new ArgumentNullException("patternDefinition");
             if (syntaxStyle == null)
                 throw new ArgumentNullException("syntaxStyle");
+            if (String.IsNullOrEmpty(name))
+                throw new ArgumentException("name must not be null or empty", "name");
 
-            _patternStylePairs.Add(new KeyValuePair<PatternDefinition, SyntaxStyle>(patternDefinition, syntaxStyle));
+            var existingPatternStyle = FindPatternStyle(name);
+
+            if (existingPatternStyle != null)
+                throw new ArgumentException("A pattern style pair with the same name already exists");
+
+            _patternStyles.Add(new PatternStyleMap(name, patternDefinition, syntaxStyle));
+        }
+
+        private PatternStyleMap FindPatternStyle(string name)
+        {
+            var patternStyle = _patternStyles.FirstOrDefault(p => String.Equals(p.Name, name, StringComparison.Ordinal));
+            return patternStyle;
         }
 
         /// <summary>
@@ -82,6 +91,41 @@ namespace WinFormsSyntaxHighlighter
             ReHighlight();
         }
 
+        // TODO: make abstact
+        internal IEnumerable<Expression> Parse(string text)
+        {
+            return new[] { new Expression(text, ExpressionType.String, String.Empty)};
+        }
+
+        // TODO: make abstract
+        internal IEnumerable<StyleGroupPair> GetStyles()
+        {
+            return new[] { new StyleGroupPair(new SyntaxStyle(_richTextBox.ForeColor), String.Empty)};
+        }
+
+        // TODO: make virtual
+        internal virtual string GetGroupName(Expression expression)
+        {
+            return expression.Group;
+        }
+
+        private List<StyleGroupPair> _styleGroupPairs;
+
+        private List<StyleGroupPair> GetStyleGroupPairs()
+        {
+            if (_styleGroupPairs == null)
+            {
+                _styleGroupPairs = GetStyles().ToList();
+
+                for (int i = 0; i < _styleGroupPairs.Count; i++)
+                {
+                    _styleGroupPairs[i].Index = i + 1;
+                }
+            }
+
+            return _styleGroupPairs;
+        }
+
         /// <summary>
         /// The base method that highlights the text-box content.
         /// </summary>
@@ -91,85 +135,98 @@ namespace WinFormsSyntaxHighlighter
 
             try
             {
-                // TODO: do the parsing and RTF generation here
-                //// create tab replacement string once forever
-                //string tabReplacement = "\t";
-                //if (AppSettings.Settings.ReplaceTabs)
-                //{
-                //    var sbTab = new StringBuilder();
-                //    for (int i = 0; i < AppSettings.Settings.TabSize; ++i)
-                //    {
-                //        sbTab.Append(" ");
-                //    }
-                //    tabReplacement = sbTab.ToString();
-                //}
+                var sb = new StringBuilder();
 
+                sb.AppendLine(RTFHeader());
+                sb.AppendLine(RTFColorTable());
+                sb.Append(@"\viewkind4\uc1\pard\f0\fs17 ");
 
-                //ParserHelper helper = new ParserHelper(selectedLanguage);
-                //var sb = new StringBuilder();
+                foreach (var exp in Parse(_richTextBox.Text))
+                {
+                    if (exp.Type == ExpressionType.Whitespace)
+                    {
+                        string wsContent = exp.Content;
+                        sb.Append(wsContent);
+                    }
+                    else if (exp.Type == ExpressionType.Newline)
+                    {
+                        sb.AppendLine(@"\par");
+                    }
+                    else
+                    {
+                        string content = exp.Content.Replace("\\", "\\\\").Replace("{", @"\{").Replace("}", @"\}");
 
-                //sb.AppendLine(RTFHeader());
-                //sb.AppendLine(RTFColorTable());
-                //sb.Append(@"\viewkind4\uc1\pard\f0\fs17 ");
+                        var styleGroups = GetStyleGroupPairs();
 
-                //foreach (var exp in helper.GetExpressions(TextBox.Text))
-                //{
-                //    if (exp.Type == ExpressionType.Whitespace)
-                //    {
-                //        string wsContent = exp.Content;
-                //        // TODO: the cursor cannot go to the end of the strings, it remains where it was
-                //        //if (AppSettings.Settings.ReplaceTabs && wsContent.IndexOf("\t") >= 0)
-                //        //{
-                //        //    wsContent = wsContent.Replace("\t", tabReplacement);
-                //        //}
-                //        sb.Append(wsContent);
-                //    }
-                //    else if (exp.Type == ExpressionType.Newline)
-                //    {
-                //        sb.AppendLine(@"\par");
-                //    }
-                //    else
-                //    {
-                //        string content = exp.Content.Replace("\\", "\\\\").Replace("{", @"\{").Replace("}", @"\}");
+                        string groupName = GetGroupName(exp);
 
-                //        ColorProfile.GroupProperties props;
-                //        if (core.ColorProfiles.IsAnyProfileSelected &&
-                //            core.ColorProfiles.SelectedProfile.TryGetProperties(
-                //                Core.MapExpressionToColorProfileGroupName(exp), out props))
-                //        {
-                //            string opening = "", cloing = "";
+                        var styleToApply = styleGroups.FirstOrDefault(s => String.Equals(s.GroupName, groupName, StringComparison.Ordinal));
 
-                //            if (props.Bold)
-                //            {
-                //                opening += @"\b";
-                //                cloing += @"\b0";
-                //            }
+                        if (styleToApply != null)
+                        {
+                            string opening = String.Empty, cloing = String.Empty;
 
-                //            if (props.Italic)
-                //            {
-                //                opening += @"\i";
-                //                cloing += @"\i0";
-                //            }
+                            if (styleToApply.SyntaxStyle.Bold)
+                            {
+                                opening += @"\b";
+                                cloing += @"\b0";
+                            }
 
-                //            sb.AppendFormat(@"\cf{0}{2} {1}\cf0{3} ", core.GetColorIndex(exp.Type, exp.Group),
-                //                content, opening, cloing);
-                //        }
-                //        else
-                //        {
-                //            sb.AppendFormat(@"\cf{0} {1}\cf0 ", core.GetColorIndex(exp.Type, exp.Group),
-                //                content);
-                //        }
-                //    }
-                //}
+                            if (styleToApply.SyntaxStyle.Italic)
+                            {
+                                opening += @"\i";
+                                cloing += @"\i0";
+                            }
 
-                //sb.Append(@"\par }");
+                            sb.AppendFormat(@"\cf{0}{2} {1}\cf0{3} ", styleToApply.Index,
+                                content, opening, cloing);
+                        }
+                        else
+                        {
+                            sb.AppendFormat(@"\cf{0} {1}\cf0 ", 1,
+                                content);
+                        }
+                    }
+                }
 
-                //_richTextBox.Rtf = sb.ToString();
+                sb.Append(@"\par }");
+
+                _richTextBox.Rtf = sb.ToString();
             }
             finally
             {
                 _isDuringHighlight = false;
             }
         }
+
+        private string RTFColorTable()
+        {
+            var styleGroupPairs = GetStyleGroupPairs();
+
+            if (styleGroupPairs.Count <= 0)
+                styleGroupPairs.Add(new StyleGroupPair(new SyntaxStyle(_richTextBox.ForeColor), String.Empty));
+
+            var sbRtfColorTable = new StringBuilder();
+            sbRtfColorTable.Append(@"{\colortbl ;");
+
+            foreach (var styleGroup in styleGroupPairs)
+            {
+                sbRtfColorTable.AppendFormat("{0};", ColorUtils.ColorToRtfTableEntry(styleGroup.SyntaxStyle.Color));
+            }
+
+            sbRtfColorTable.Append("}");
+
+            return sbRtfColorTable.ToString();
+        }
+
+
+        #region RTF Stuff
+        private string RTFHeader()
+        {
+            return @"{\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Courier New;}}";
+        }
+
+        #endregion
+
     }
 }
