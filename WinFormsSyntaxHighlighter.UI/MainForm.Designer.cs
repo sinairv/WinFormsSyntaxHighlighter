@@ -33,9 +33,11 @@
             // 
             // rtbInput
             // 
+            this.rtbInput.AcceptsTab = true;
             this.rtbInput.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.rtbInput.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.rtbInput.Location = new System.Drawing.Point(13, 13);
             this.rtbInput.Name = "rtbInput";
             this.rtbInput.Size = new System.Drawing.Size(784, 347);

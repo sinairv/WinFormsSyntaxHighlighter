@@ -7,6 +7,7 @@ namespace WinFormsSyntaxHighlighter
     public class PatternDefinition
     {
         private readonly Regex _regex;
+        private ExpressionType _expressionType = ExpressionType.Identifier;
 
         public PatternDefinition(Regex regularExpression)
         {
@@ -46,6 +47,17 @@ namespace WinFormsSyntaxHighlighter
 
             string pattern = String.Join("|", regexTokens);
             _regex = new Regex(pattern, RegexOptions.Compiled);
+        }
+
+        public PatternDefinition(params string[] tokens)
+            : this((IEnumerable<string>)tokens)
+        {
+        }
+
+        internal ExpressionType ExpressionType 
+        {
+            get { return _expressionType; }
+            set { _expressionType = value; }
         }
 
         internal Regex Regex

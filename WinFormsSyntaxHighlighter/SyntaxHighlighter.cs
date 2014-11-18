@@ -69,6 +69,11 @@ namespace WinFormsSyntaxHighlighter
             _patternStyles.Add(new PatternStyleMap(name, patternDefinition, syntaxStyle));
         }
 
+        protected SyntaxStyle GetDefaultStyle()
+        {
+            return new SyntaxStyle(_richTextBox.ForeColor, _richTextBox.Font.Bold, _richTextBox.Font.Italic);
+        }
+
         private PatternStyleMap FindPatternStyle(string name)
         {
             var patternStyle = _patternStyles.FirstOrDefault(p => String.Equals(p.Name, name, StringComparison.Ordinal));
@@ -97,12 +102,18 @@ namespace WinFormsSyntaxHighlighter
         // TODO: make abstact
         internal IEnumerable<Expression> Parse(string text)
         {
+            text = text.NormalizeLineBreaks("\n");
             var parsedExpressions = new List<Expression> { new Expression(text, ExpressionType.None, String.Empty) };
 
             foreach (var patternStyleMap in _patternStyles)
             {
                 parsedExpressions = ParsePattern(patternStyleMap, parsedExpressions);
             }
+
+            // process linebreaks
+            var lineBreakPattern = new PatternDefinition(Regex.Escape("\n")) {ExpressionType = ExpressionType.Newline};
+            var lineBreakPatternStyle = new PatternStyleMap("line-break", lineBreakPattern, GetDefaultStyle());
+            parsedExpressions = ParsePattern(lineBreakPatternStyle, parsedExpressions);
 
             return parsedExpressions;
         }
@@ -133,11 +144,11 @@ namespace WinFormsSyntaxHighlighter
                                 string nonMatchedContent = inputExpression.Content.Substring(lastProcessedIndex + 1, match.Index - lastProcessedIndex - 1);
                                 var nonMatchedExpression = new Expression(nonMatchedContent, ExpressionType.None, String.Empty);
                                 parsedExpressions.Add(nonMatchedExpression);
-                                lastProcessedIndex = match.Index + match.Length - 1;
+                                //lastProcessedIndex = match.Index + match.Length - 1;
                             }
 
                             string matchedContent = inputExpression.Content.Substring(match.Index, match.Length);
-                            var matchedExpression = new Expression(matchedContent, ExpressionType.String, patternStyleMap.Name);
+                            var matchedExpression = new Expression(matchedContent, patternStyleMap.PatternDefinition.ExpressionType, patternStyleMap.Name);
                             parsedExpressions.Add(matchedExpression);
                             lastProcessedIndex = match.Index + match.Length - 1;
                         }
@@ -158,7 +169,7 @@ namespace WinFormsSyntaxHighlighter
         // TODO: make abstract
         internal IEnumerable<StyleGroupPair> GetStyles()
         {
-            yield return new StyleGroupPair(new SyntaxStyle(_richTextBox.ForeColor), String.Empty);
+            yield return new StyleGroupPair(GetDefaultStyle(), String.Empty);
 
             foreach (var patternStyle in _patternStyles)
             {
@@ -188,6 +199,7 @@ namespace WinFormsSyntaxHighlighter
             return _styleGroupPairs;
         }
 
+        #region RTF Stuff
         /// <summary>
         /// The base method that highlights the text-box content.
         /// </summary>
@@ -265,7 +277,7 @@ namespace WinFormsSyntaxHighlighter
             var styleGroupPairs = GetStyleGroupPairs();
 
             if (styleGroupPairs.Count <= 0)
-                styleGroupPairs.Add(new StyleGroupPair(new SyntaxStyle(_richTextBox.ForeColor), String.Empty));
+                styleGroupPairs.Add(new StyleGroupPair(GetDefaultStyle(), String.Empty));
 
             var sbRtfColorTable = new StringBuilder();
             sbRtfColorTable.Append(@"{\colortbl ;");
@@ -280,8 +292,6 @@ namespace WinFormsSyntaxHighlighter
             return sbRtfColorTable.ToString();
         }
 
-
-        #region RTF Stuff
         private string RTFHeader()
         {
             return @"{\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Courier New;}}";
