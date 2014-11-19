@@ -23,7 +23,7 @@ syntaxHighlighter.AddPattern(
 
 // numbers; I'd like to see them in purple
 syntaxHighlighter.AddPattern(
-    new PatternDefinition(@"\d+|\d+\.\d+"), 
+    new PatternDefinition(@"\d+\.\d+|\d+"), 
     new SyntaxStyle(Color.Purple));
 
 // double quote strings; I'd like to see them in Red

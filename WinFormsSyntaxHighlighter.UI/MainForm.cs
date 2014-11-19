@@ -16,7 +16,7 @@ namespace WinFormsSyntaxHighlighter.UI
             // singlie-line comments
             syntaxHighlighter.AddPattern(new PatternDefinition(new Regex(@"//.*?$", RegexOptions.Multiline | RegexOptions.Compiled)), new SyntaxStyle(Color.Green, false, true));
             // numbers
-            syntaxHighlighter.AddPattern(new PatternDefinition(@"\d+|\d+\.\d+"), new SyntaxStyle(Color.Purple));
+            syntaxHighlighter.AddPattern(new PatternDefinition(@"\d+\.\d+|\d+"), new SyntaxStyle(Color.Purple));
             // double quote strings
             syntaxHighlighter.AddPattern(new PatternDefinition(@"\""([^""]|\""\"")+\"""), new SyntaxStyle(Color.Red));
             // single quote strings
@@ -27,7 +27,6 @@ namespace WinFormsSyntaxHighlighter.UI
             syntaxHighlighter.AddPattern(new CaseInsensitivePatternDefinition("public", "partial", "class", "void"), new SyntaxStyle(Color.Navy, true, false));
             // operators
             syntaxHighlighter.AddPattern(new PatternDefinition("+", "-", ">", "<", "&", "|"), new SyntaxStyle(Color.Brown));
-
         }
     }
 }

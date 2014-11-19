@@ -16,6 +16,10 @@ namespace WinFormsSyntaxHighlighter
         /// </summary>
         private readonly RichTextBox _richTextBox;
 
+        private readonly int _fontSizeFactor;
+
+        private readonly string _fontName;
+
         /// <summary>
         /// Determines whether the program is busy creating rtf for the previous
         /// modification of the text-box. It is necessary to avoid blinks when the 
@@ -33,6 +37,9 @@ namespace WinFormsSyntaxHighlighter
                 throw new ArgumentNullException("richTextBox");
 
             _richTextBox = richTextBox;
+
+            _fontSizeFactor = Convert.ToInt32(_richTextBox.Font.Size * 2);
+            _fontName = _richTextBox.Font.Name;
 
             DisableHighlighting = false;
 
@@ -265,7 +272,7 @@ namespace WinFormsSyntaxHighlighter
 
                 sb.AppendLine(RTFHeader());
                 sb.AppendLine(RTFColorTable());
-                sb.Append(@"\viewkind4\uc1\pard\f0\fs17 ");
+                sb.Append(@"\viewkind4\uc1\pard\f0\fs").Append(_fontSizeFactor).Append(" ");
 
                 foreach (var exp in Parse(_richTextBox.Text))
                 {
@@ -346,7 +353,7 @@ namespace WinFormsSyntaxHighlighter
 
         private string RTFHeader()
         {
-            return @"{\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Courier New;}}";
+            return String.Concat(@"{\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 ", _fontName, @";}}");
         }
 
         #endregion
