@@ -24,7 +24,7 @@ namespace WinFormsSyntaxHighlighter.UI
             // keywords1
             syntaxHighlighter.AddPattern(new PatternDefinition("for", "foreach", "int", "var"), new SyntaxStyle(Color.Blue));
             // keywords2
-            syntaxHighlighter.AddPattern(new PatternDefinition("public", "partial", "class", "void"), new SyntaxStyle(Color.Black, true, false));
+            syntaxHighlighter.AddPattern(new CaseInsensitivePatternDefinition("public", "partial", "class", "void"), new SyntaxStyle(Color.Navy, true, false));
             // operators
             syntaxHighlighter.AddPattern(new PatternDefinition("+", "-", ">", "<", "&", "|"), new SyntaxStyle(Color.Brown));
 

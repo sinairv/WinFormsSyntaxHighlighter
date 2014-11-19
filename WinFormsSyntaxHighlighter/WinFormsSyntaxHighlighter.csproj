@@ -41,6 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CaseInsensitivePatternDefinition.cs" />
     <Compile Include="StringExtensions.cs" />
     <Compile Include="StyleGroupPair.cs" />
     <Compile Include="ColorUtils.cs" />
