@@ -110,10 +110,62 @@ namespace WinFormsSyntaxHighlighter
                 parsedExpressions = ParsePattern(patternStyleMap, parsedExpressions);
             }
 
-            // process linebreaks
-            var lineBreakPattern = new PatternDefinition(Regex.Escape("\n")) {ExpressionType = ExpressionType.Newline};
-            var lineBreakPatternStyle = new PatternStyleMap("line-break", lineBreakPattern, GetDefaultStyle());
-            parsedExpressions = ParsePattern(lineBreakPatternStyle, parsedExpressions);
+            parsedExpressions = ProcessLineBreaks(parsedExpressions);
+            return parsedExpressions;
+        }
+
+        // TODO: move to child
+        private Regex _lineBreakRegex;
+
+        // TODO: move to child
+        private Regex GetLineBreakRegex()
+        {
+            if (_lineBreakRegex == null)
+                _lineBreakRegex = new Regex(Regex.Escape("\n"), RegexOptions.Compiled);
+
+            return _lineBreakRegex;
+        }
+
+        private List<Expression> ProcessLineBreaks(List<Expression> expressions)
+        {
+            var parsedExpressions = new List<Expression>();
+
+            var regex = GetLineBreakRegex();
+
+            foreach (var inputExpression in expressions)
+            {
+                int lastProcessedIndex = -1;
+
+                foreach (var match in regex.Matches(inputExpression.Content).Cast<Match>().OrderBy(m => m.Index))
+                {
+                    if (match.Success)
+                    {
+                        if (match.Index > lastProcessedIndex + 1)
+                        {
+                            string nonMatchedContent = inputExpression.Content.Substring(lastProcessedIndex + 1,
+                                match.Index - lastProcessedIndex - 1);
+                            var nonMatchedExpression = new Expression(nonMatchedContent, inputExpression.Type,
+                                inputExpression.Group);
+                            parsedExpressions.Add(nonMatchedExpression);
+                            //lastProcessedIndex = match.Index + match.Length - 1;
+                        }
+
+                        string matchedContent = inputExpression.Content.Substring(match.Index, match.Length);
+                        var matchedExpression = new Expression(matchedContent,
+                            ExpressionType.Newline, "line-break");
+                        parsedExpressions.Add(matchedExpression);
+                        lastProcessedIndex = match.Index + match.Length - 1;
+                    }
+                }
+
+                if (lastProcessedIndex < inputExpression.Content.Length - 1)
+                {
+                    string nonMatchedContent = inputExpression.Content.Substring(lastProcessedIndex + 1,
+                        inputExpression.Content.Length - lastProcessedIndex - 1);
+                    var nonMatchedExpression = new Expression(nonMatchedContent, inputExpression.Type, inputExpression.Group);
+                    parsedExpressions.Add(nonMatchedExpression);
+                }
+            }
 
             return parsedExpressions;
         }

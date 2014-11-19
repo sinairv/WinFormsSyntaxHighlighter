@@ -12,9 +12,9 @@ namespace WinFormsSyntaxHighlighter.UI
             var syntaxHighlighter = new SyntaxHighlighter(rtbInput);
 
             // multi-line comments
-            syntaxHighlighter.AddPattern(new PatternDefinition(new Regex(@"//.*?$", RegexOptions.Multiline | RegexOptions.Compiled)), new SyntaxStyle(Color.Green, false, true));
-            // singlie-line comments
             syntaxHighlighter.AddPattern(new PatternDefinition(new Regex(@"/\*(.|[\r\n])*?\*/", RegexOptions.Multiline | RegexOptions.Compiled)), new SyntaxStyle(Color.DarkSeaGreen, false, true));
+            // singlie-line comments
+            syntaxHighlighter.AddPattern(new PatternDefinition(new Regex(@"//.*?$", RegexOptions.Multiline | RegexOptions.Compiled)), new SyntaxStyle(Color.Green, false, true));
             // numbers
             syntaxHighlighter.AddPattern(new PatternDefinition(@"\d+|\d+\.\d+"), new SyntaxStyle(Color.Purple));
             // double quote strings
