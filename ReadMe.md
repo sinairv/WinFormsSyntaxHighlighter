@@ -52,7 +52,6 @@ syntaxHighlighter.AddPattern(
     new SyntaxStyle(Color.Brown));
 ``` 
 
-That's it :smile:
 
 ## License
 
